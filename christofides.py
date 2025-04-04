@@ -1,4 +1,5 @@
-import numpy as np 
+import numpy as np
+
 
 
 def ACPM(graph,s=0):
@@ -13,7 +14,7 @@ def ACPM(graph,s=0):
     predecesor = [-1] * len(graph)
 
     # commence du sommet 0, résultat toujours pareil
-    couts[s] = 0 
+    couts[s] = 0
 
     Q = np.arange(len(graph))
 
@@ -21,9 +22,9 @@ def ACPM(graph,s=0):
         # sommet de coût minimal qui est dans Q
         min_vertex =  np.argmin(couts[Q])
         idx_vertex = Q[min_vertex]
-        # on le supprime, il est marqué il sera plus utilisé 
+        # on le supprime, il est marqué il sera plus utilisé
         Q = np.delete(Q,min_vertex)
-        
+
         edges = arbre[idx_vertex,Q]
 
         for i in range(len(edges)):
@@ -35,9 +36,9 @@ def ACPM(graph,s=0):
 
 def compute_impair_vertices(acpm_tree):
     """
-    calculer l'ensemble de degrés impaires 
+    calculer l'ensemble de degrés impaires
     param:
-        acpm_graph: 1D array, il contient le prédécéseur de chaque sommet 
+        acpm_graph: 1D array, il contient le prédécéseur de chaque sommet
         sachant que le sommet de départ à la valeur de -1
 
     return:
@@ -45,37 +46,37 @@ def compute_impair_vertices(acpm_tree):
     """
 
     """
-    on utilise un arbre couvrant donc forcément chaque sommet 
-    à un 'prédéceseur' donc on initialise à 1 apart le sommet 
+    on utilise un arbre couvrant donc forcément chaque sommet
+    à un 'prédéceseur' donc on initialise à 1 apart le sommet
     de 'départ'
     """
-    # on utilise un arbre couvrant donc forcément 
+    # on utilise un arbre couvrant donc forcément
     degrees = np.array([1] * len(acpm_tree))
     degrees[np.argwhere(acpm_tree == -1)] = 0
 
     for i in range(len(acpm_tree)):
 
         # pour chaque sommet si dans la liste des prédécéseurs
-        # il y a ce sommet alors on incrémente son degré 
+        # il y a ce sommet alors on incrémente son degré
         to_add = np.sum(acpm_tree == i)
         degrees[i] += to_add
-    
+
     odd_vertices =  np.argwhere(degrees % 2 == 1).flatten()
-    
+
     return odd_vertices
 
 
 
 def minimum_weight_matching(graph,vertices):
-    
+
     ret = []
     while len(vertices) != 0:
         v = vertices[0]
         vertices = vertices[1:]
         length = float("inf")
-        
+
         closest = 0
-        
+
         for u in vertices:
             if v != u and graph[v,u] < length:
                 length = graph[v,u]
@@ -91,10 +92,10 @@ def minimum_weight_matching(graph,vertices):
 def unite_matching_acpm(matching_M,acpm_T,graph):
     """
     We should combine the edges of the ACPM and the minimum_weight_matching
-    it will be our final graph that we will use for the Euler tour 
+    it will be our final graph that we will use for the Euler tour
     """
     res = [[] for _ in range(len(graph))]
-    
+
     # e.g
     # [[4], [4], [4], [4], [0, 1, 2, 3]]
     # the first vertice has the 4th vertice as an edge
@@ -109,21 +110,21 @@ def unite_matching_acpm(matching_M,acpm_T,graph):
     for i in matching_M:
         vertice1,vertice2 = i
         res[vertice1].append( (vertice2) )
-        res[vertice2].append( (vertice1) )    
+        res[vertice2].append( (vertice1) )
     return res
 
 
 def euler_tour(list_adj,start_vertex=0):
     """
-    euler tour 
+    euler tour
     param:
-        list adj we get this from unite_matching_acpm method 
+        list adj we get this from unite_matching_acpm method
         e.g [[(4), (1)], [(4), (0)], [(4), (3)], [(4), (2)], [(0), (1), (2), (3)]]
-        the first vertice can go to the vertice 4 and 1, 
+        the first vertice can go to the vertice 4 and 1,
         the second vertice can go to the vertice 4 and 0, .... it's symetric
 
     return:
-        euler tour with potentially a cycle 
+        euler tour with potentially a cycle
     """
     tour = []
     stack = [start_vertex]
@@ -142,13 +143,13 @@ def euler_tour(list_adj,start_vertex=0):
 
 def remove_repeated_vertices_euleur(tour):
     """
-    after performing euleur tour we should remove the repeated vertices 
+    after performing euleur tour we should remove the repeated vertices
     as we can only pass one time for each vertices
     param:
         tour: the tour founded by the euleur algo
 
     return:
-        same tour with removed repeated vertices 
+        same tour with removed repeated vertices
 
     e.g  [4, 3, 2, 4, 1, 0, 4]
     start at vertice 4 then go to 3 - 2 - 4 (repeated should be removed) ....
@@ -161,13 +162,13 @@ def remove_repeated_vertices_euleur(tour):
             visited.append(tour[i])
         else:
             # it has already been visited we should branch we the next one
-            idx_to_remove.append(i)    
+            idx_to_remove.append(i)
 
     tour = np.array(tour)
     tour = np.delete(tour,idx_to_remove)
 
     return tour.tolist()
-    
+
 
 
 def christophides(arbre):
@@ -175,17 +176,17 @@ def christophides(arbre):
 
     acpm_graph = ACPM(arbre,s=0)
 
-    
+
     odd_vertices = compute_impair_vertices(acpm_graph)
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
-    
-    
+
+
     acpm_union_min_vertices = unite_matching_acpm(minimum_matching_vertices,acpm_graph,arbre)
-    
+
     tour = euler_tour(acpm_union_min_vertices)
     tour = remove_repeated_vertices_euleur(tour)
 
-    # we can return anything, tour or the cost ect 
+    # we can return anything, tour or the cost ect
     return tour
 
 """
@@ -210,3 +211,5 @@ arbre = np.array([  [0,2,1,3,2],
 arbre = arbre + arbre.T # symmetric
 
 print('Solution: ',christophides(arbre))
+
+# Baki Uzun
