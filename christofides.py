@@ -21,15 +21,16 @@ def ACPM(graph,s=0):
         # sommet de coût minimal qui est dans Q
         min_vertex =  np.argmin(couts[Q])
         idx_vertex = Q[min_vertex]
+
         # on le supprime, il est marqué il sera plus utilisé
         Q = np.delete(Q,min_vertex)
-
-        edges = arbre[idx_vertex,Q]
+        edges = graph[idx_vertex,Q]
 
         for i in range(len(edges)):
             if edges[i] < couts[Q[i]]:
                 couts[Q[i]] = edges[i]
                 predecesor[Q[i]] = idx_vertex
+
     return np.array(predecesor)
 
 
@@ -177,18 +178,19 @@ def christophides(arbre):
 
 
     odd_vertices = compute_impair_vertices(acpm_graph)
+
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
-
-
+    print(minimum_matching_vertices)
     acpm_union_min_vertices = unite_matching_acpm(minimum_matching_vertices,acpm_graph,arbre)
 
-    tour = euler_tour(acpm_union_min_vertices)
+    tour = euler_tour(acpm_union_min_vertices,start_vertex=0)
+
     tour = remove_repeated_vertices_euleur(tour)
 
     # we can return anything, tour or the cost ect
     return tour
 
-"""
+
 arbre = np.array([[0,1,2,1,1],
                     [0,0,1,2,1],
                     [0,0,0,1,1],
@@ -196,16 +198,17 @@ arbre = np.array([[0,1,2,1,1],
                     [0,0,0,0,0],
                  ])
 
-"""
+
 
 # test celui du td
+"""
 arbre = np.array([  [0,2,1,3,2],
                     [0,0,1,2,3],
                     [0,0,0,2,3],
                     [0,0,0,0,2],
                     [0,0,0,0,0],
                  ])
-
+"""
 
 arbre = arbre + arbre.T # symmetric
 
