@@ -170,8 +170,7 @@ def remove_repeated_vertices_euleur(tour):
     return tour.tolist()
 
 
-
-def christophides(arbre):
+def apply_christophides(arbre):
     # https://en.wikipedia.org/wiki/Christofides_algorithm
 
     acpm_graph = ACPM(arbre,s=0)
@@ -199,7 +198,6 @@ arbre = np.array([[0,1,2,1,1],
                  ])
 
 
-
 # test celui du td
 """
 arbre = np.array([  [0,2,1,3,2],
@@ -212,4 +210,4 @@ arbre = np.array([  [0,2,1,3,2],
 
 arbre = arbre + arbre.T # symmetric
 
-print('Solution: ',christophides(arbre))
+print('Solution: ',apply_christophides(arbre))
