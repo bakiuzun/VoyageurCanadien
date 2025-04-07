@@ -65,8 +65,6 @@ def compute_impair_vertices(acpm_tree):
 
     return odd_vertices
 
-
-
 def minimum_weight_matching(graph,vertices):
 
     ret = []
@@ -179,7 +177,7 @@ def apply_christophides(arbre):
     odd_vertices = compute_impair_vertices(acpm_graph)
 
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
-    print(minimum_matching_vertices)
+
     acpm_union_min_vertices = unite_matching_acpm(minimum_matching_vertices,acpm_graph,arbre)
 
     tour = euler_tour(acpm_union_min_vertices,start_vertex=0)
@@ -210,4 +208,4 @@ arbre = np.array([  [0,2,1,3,2],
 
 arbre = arbre + arbre.T # symmetric
 
-print('Solution: ',apply_christophides(arbre))
+#print('Solution: ',apply_christophides(arbre))
