@@ -24,16 +24,30 @@ def find_next_vertice_after_block(from_source, blocked_dest,blockages,path,i):
         i += 1
         blocked_dest = path[i]
 
-       
-    
     next_vertice = i
     return next_vertice
+
+
+def find_intermediaire_vertice(from_source,dest,path,visited):
+    
+    source_index = path.index(from_source)
+    dest_index = path.index(dest)
+
+    if source_index < dest_index:
+        # Normal case: source comes before dest
+        subpath = path[source_index + 1 : dest_index]
+    else:
+        # Circular case: dest comes before source
+        subpath = path[source_index + 1 :] + path[:dest_index]
+    
+    intermediaire = [v for v in subpath if v in visited]
+    
+    return intermediaire # list 
 
 
 def find_next_vertice_with_neighbor(from_source,blocked_dest,blockages,visited):
 
     # check if i can go from source to one neighbor if yes then check if i can go from this neighbor to the blocked_dest
-
     for visited_vertice in visited:
         if [from_source,visited_vertice] not in blockages and [visited_vertice,blocked_dest] not in blockages:
             # done 
@@ -76,51 +90,61 @@ def apply_routage_cyclique(routes,blockages):
     
 
     # check blocages
+    path = ['A','B','C','D']
+    #blockages = [ ['A','B'],['A','C'], ['B','C'] ]
+    blockages = [ ['B','C'],['D','C'],['A','C']  ]
     initial_path = path 
+
+    complete_path = []
 
     i,used_path = first_iteration(path,blockages)
 
     non_visited = [item for item in path if item not in used_path]
     visited = used_path
 
+    complete_path += visited
+
     # remaining iteration are done here because it is the same principal
     #while len(NonVisited) != len(initial_path):
     
-    if i == len(used_path):
+    if used_path[-1] == path[i-1]:
         # même sens     
         source = path[i-1] # last vertice
         path = non_visited # new path 
 
-        i = 1 
-        while i != len(path):
+        i = 0
+        
+        print("PATH = ",path)
+        while i <= len(path):
             dest = path[i]
-            
             if [source,dest] in blockages:
-                # find a way with the neighboor 
-                intermediaire_vertex = find_next_vertice_with_neighbor(source,dest,blockages,visited) 
-
-
+                # intermediaire 
+                intermediaire_vertices =  find_intermediaire_vertice(source,dest,initial_path,visited)
+                next_vertice = find_next_vertice_with_neighbor(source,dest,blockages,intermediaire_vertices) 
+                
                 # could not find intermediare vertex
-                if intermediaire_vertex == -1:
-
-                    # we will have 2 times i += 1 so we skip it
+                if next_vertice == -1:
                     i += 2 # skip the next dest 
-
                 else:
+                    i += 1
+                    complete_path.append(next_vertice)
+                    complete_path.append(dest)
                     visited.append(dest)
 
             else:
+                complete_path.append(dest)
                 visited.append(dest)
                 i += 1 
-                source = dest
-
-
-
-
+            
+            source = dest
+        
+        print('COMPLETE PATH = ',complete_path)
+        print('VISITED = ',visited )
     else: # i == -1, means we couldn't go to the last vertice we should change the order 
         pass
-
-
-
+    
+    
+    
+    # racordement du dernier sommet au sommet de départ 
 
 apply_routage_cyclique(routes,blockages)
