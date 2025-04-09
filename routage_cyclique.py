@@ -1,5 +1,5 @@
 from christofides import apply_christophides
-from utils import transform_to_matrix,get_path_in_letters
+from utils import transform_to_matrix,get_path_in_letters,construct_example_path
 
 routes = {
     'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
@@ -122,52 +122,68 @@ def get_non_visited_vertice(all_vertice,visited_vertice):
 
 
 def apply_routage_cyclique(routes,blockages):
+    routes = construct_example_path()
     matrix = transform_to_matrix(routes)
     christofides_path = apply_christophides(matrix)
     path_to_take = get_path_in_letters(christofides_path,routes)
     
-    last_vertice = path_to_take[0] 
     path_to_take = path_to_take[:-1] # i just remove the last vertice because it is equal to the first one 
-    # check blocages
-    #path_to_take = ['A','B','C','D']
-    #blockages = [ ['A','B'],['B','A'],['D','C'],['C','D'] ]
+    initial_path = path_to_take
     
-    initial_path = path_to_take 
-    complete_path = []
+    path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
+    initial_path = path_to_take
+    first_direction = initial_path.copy()
+    last_vertice = path_to_take[0] 
+    blockages = [ ['V3','V4'],['V3','V5'],
+                  ['V7','V8'],
+                  ['V9','V10'],
+                  ['V12','V13'],
+                  ['V12','V14'],
+                  ['V16','V4'],
+                  ['V4','V5'],
+                  ['V8','V10'],
+                  ['V13','V14'],
+                  ['V13','V10'],
+                  ['V13','V12'],
+                  ['V10','V5'],
+                  ['V10','V9'],
+                  ['V10','V8'],
+                  ['V5','V4'],
+                  ['V5','V14'],
+                  ['V5','V3'],
+                  ['V14','V1']
+                 ] 
+    
+    # first iteration 
     taken_path = apply_first_iteration(path_to_take,blockages)
-    
     visited_vertices = taken_path
-    complete_path += taken_path
-
+    complete_path = taken_path.copy() # this is the results
     non_visited_vertices = get_non_visited_vertice(initial_path,taken_path)
-    print('INITIAL PATH = ',path_to_take)
+
+    # m iteration 
     while len(non_visited_vertices) != 0:
-        
         if taken_path[-1] == path_to_take[-1]:
             initial_path = initial_path
+            
         else: # i == -1, means we couldn't go to the last vertice we should change the order 
             initial_path = list(reversed(initial_path))
+            last_one = non_visited_vertices[-1]
+            non_visited_vertices = list(reversed(non_visited_vertices[:-1])) + [last_one]
     
          # we to the operation in the same direction
         path_to_take,taken_path,visited_vertices =  apply_iteration_m(non_visited_vertices,taken_path,
                                                                       visited_vertices,
                                                                       initial_path,blockages)
-            
         complete_path += taken_path
         non_visited_vertices  = get_non_visited_vertice(initial_path,visited_vertices)
         
-
-    # re branchement avec la source 
-    
-    initial_path = initial_path if taken_path[-1] == path_to_take[-1] else list(reversed(initial_path)) 
+    # last iteration 
     path_to_take,taken_path,visited_vertices =  apply_iteration_m([last_vertice],taken_path,
                                                                       visited_vertices,
-                                                                      initial_path,blockages)
-    
+                                                                      first_direction,blockages)
     complete_path += taken_path
-
-    print('COMPLETE PATH ',complete_path)
     
+    print(complete_path)
 # racordement du dernier sommet au sommet de départ 
 
 apply_routage_cyclique(routes,blockages)

@@ -43,13 +43,14 @@ def construct_example_path():
 
     for i in range(len(vertices)):
         depart = vertices[i]
+        l = {}
         for j in range(len(vertices)):
             
             arriver = vertices[j]
-            cout = np.abs(j - i)
+            cout = int(np.abs(j - i))
+            l[arriver] = cout
 
+        routes[depart] = l
+            
+    return routes
 
-
-
-
-print(construct_example_path())
