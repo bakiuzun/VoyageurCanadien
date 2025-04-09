@@ -1,5 +1,4 @@
 from christofides import apply_christophides
-import christofides
 from utils import transform_to_matrix,get_path_in_letters
 
 routes = {
@@ -128,9 +127,10 @@ def apply_routage_cyclique(routes,blockages):
     path_to_take = get_path_in_letters(christofides_path,routes)
     
     last_vertice = path_to_take[0] 
+    path_to_take = path_to_take[:-1] # i just remove the last vertice because it is equal to the first one 
     # check blocages
-    path_to_take = ['A','B','C','D']
-    blockages = [ ['A','B'],['B','A'],['D','C'],['C','D'] ]
+    #path_to_take = ['A','B','C','D']
+    #blockages = [ ['A','B'],['B','A'],['D','C'],['C','D'] ]
     
     initial_path = path_to_take 
     complete_path = []
@@ -158,11 +158,12 @@ def apply_routage_cyclique(routes,blockages):
         
 
     # re branchement avec la source 
+    
     initial_path = initial_path if taken_path[-1] == path_to_take[-1] else list(reversed(initial_path)) 
     path_to_take,taken_path,visited_vertices =  apply_iteration_m([last_vertice],taken_path,
                                                                       visited_vertices,
                                                                       initial_path,blockages)
-            
+    
     complete_path += taken_path
 
     print('COMPLETE PATH ',complete_path)
