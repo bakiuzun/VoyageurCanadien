@@ -32,3 +32,24 @@ def get_path_in_letters(solution,base_tuple):
         res.append(keys[solution[i]])
 
     return res
+
+
+
+
+def construct_example_path():
+    vertices = [f"V{i+1}" for i in range(0,16)]
+    
+    routes = {}
+
+    for i in range(len(vertices)):
+        depart = vertices[i]
+        for j in range(len(vertices)):
+            
+            arriver = vertices[j]
+            cout = np.abs(j - i)
+
+
+
+
+
+print(construct_example_path())

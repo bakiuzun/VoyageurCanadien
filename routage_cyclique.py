@@ -58,8 +58,8 @@ def find_next_vertice_with_neighbor(from_source,blocked_dest,blockages,visited):
     return -1 
 
 
-def first_iteration(path,blockages):
-
+def apply_first_iteration(path,blockages):
+    ### we just apply christofides 
     P1_cr = []
 
     source = path[0]
@@ -71,80 +71,102 @@ def first_iteration(path,blockages):
         
         if [source,dest] in blockages:
             i = find_next_vertice_after_block(source,dest,blockages,path,i) 
-
             if i == -1:break # we can't go to the last vertice
-
             dest = path[i]
         i += 1 
         P1_cr.append(dest)
         source = dest
     
-    return i,P1_cr
+    return P1_cr
 
+
+
+def apply_iteration_m(path_to_take,taken_path,visited_vertices,initial_path,blockages):
+    # même sens     
+    
+    source = taken_path[-1] # last vertice that we used 
+    taken_path = []
+    
+    i = 0
+            
+    while i < len(path_to_take):
+                
+        dest = path_to_take[i]
+        if [source,dest] in blockages:
+                    # intermediaire 
+            intermediaire_vertices =  find_intermediaire_vertice(source,dest,initial_path,visited_vertices)
+            
+            next_vertice = find_next_vertice_with_neighbor(source,dest,blockages,intermediaire_vertices) 
+                    
+                    # could not find intermediare vertex, blockage everywhere to this vertex
+            if next_vertice == -1:
+                # same source , different dest
+                i += 1 
+            else:
+                i += 1
+                taken_path.append(next_vertice)
+                taken_path.append(dest)
+                visited_vertices.append(dest)
+                source = dest
+
+        else:
+            i += 1 
+            taken_path.append(dest)
+            visited_vertices.append(dest)        
+            source = dest
+
+    return path_to_take,taken_path,visited_vertices
+
+
+def get_non_visited_vertice(all_vertice,visited_vertice):
+    return [item for item in all_vertice if item not in visited_vertice]
 
 
 def apply_routage_cyclique(routes,blockages):
     matrix = transform_to_matrix(routes)
     christofides_path = apply_christophides(matrix)
-    path = get_path_in_letters(christofides_path,routes)
+    path_to_take = get_path_in_letters(christofides_path,routes)
     
-
+    last_vertice = path_to_take[0] 
     # check blocages
-    path = ['A','B','C','D']
-    #blockages = [ ['A','B'],['A','C'], ['B','C'] ]
-    blockages = [ ['B','C'],['D','C'],['A','C']  ]
-    initial_path = path 
-
+    path_to_take = ['A','B','C','D']
+    blockages = [ ['A','B'],['B','A'],['D','C'],['C','D'] ]
+    
+    initial_path = path_to_take 
     complete_path = []
-
-    i,used_path = first_iteration(path,blockages)
-
-    non_visited = [item for item in path if item not in used_path]
-    visited = used_path
-
-    complete_path += visited
-
-    # remaining iteration are done here because it is the same principal
-    #while len(NonVisited) != len(initial_path):
+    taken_path = apply_first_iteration(path_to_take,blockages)
     
-    if used_path[-1] == path[i-1]:
-        # même sens     
-        source = path[i-1] # last vertice
-        path = non_visited # new path 
+    visited_vertices = taken_path
+    complete_path += taken_path
 
-        i = 0
+    non_visited_vertices = get_non_visited_vertice(initial_path,taken_path)
+    print('INITIAL PATH = ',path_to_take)
+    while len(non_visited_vertices) != 0:
         
-        print("PATH = ",path)
-        while i <= len(path):
-            dest = path[i]
-            if [source,dest] in blockages:
-                # intermediaire 
-                intermediaire_vertices =  find_intermediaire_vertice(source,dest,initial_path,visited)
-                next_vertice = find_next_vertice_with_neighbor(source,dest,blockages,intermediaire_vertices) 
-                
-                # could not find intermediare vertex
-                if next_vertice == -1:
-                    i += 2 # skip the next dest 
-                else:
-                    i += 1
-                    complete_path.append(next_vertice)
-                    complete_path.append(dest)
-                    visited.append(dest)
-
-            else:
-                complete_path.append(dest)
-                visited.append(dest)
-                i += 1 
+        if taken_path[-1] == path_to_take[-1]:
+            initial_path = initial_path
+        else: # i == -1, means we couldn't go to the last vertice we should change the order 
+            initial_path = list(reversed(initial_path))
+    
+         # we to the operation in the same direction
+        path_to_take,taken_path,visited_vertices =  apply_iteration_m(non_visited_vertices,taken_path,
+                                                                      visited_vertices,
+                                                                      initial_path,blockages)
             
-            source = dest
+        complete_path += taken_path
+        non_visited_vertices  = get_non_visited_vertice(initial_path,visited_vertices)
         
-        print('COMPLETE PATH = ',complete_path)
-        print('VISITED = ',visited )
-    else: # i == -1, means we couldn't go to the last vertice we should change the order 
-        pass
+
+    # re branchement avec la source 
+    initial_path = initial_path if taken_path[-1] == path_to_take[-1] else list(reversed(initial_path)) 
+    path_to_take,taken_path,visited_vertices =  apply_iteration_m([last_vertice],taken_path,
+                                                                      visited_vertices,
+                                                                      initial_path,blockages)
+            
+    complete_path += taken_path
+
+    print('COMPLETE PATH ',complete_path)
     
-    
-    
-    # racordement du dernier sommet au sommet de départ 
+# racordement du dernier sommet au sommet de départ 
 
 apply_routage_cyclique(routes,blockages)
