@@ -129,7 +129,6 @@ def apply_cnn_to_routes(routes, blockages=None):
     
     return final_path
 
-# Ví dụ sử dụng
 if __name__ == "__main__":
     routes = {
         'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
