@@ -1,5 +1,5 @@
 import numpy as np
-
+import networkx as nx
 
 def ACPM(graph,s=0):
     """
@@ -65,7 +65,8 @@ def compute_impair_vertices(acpm_tree):
 
     return odd_vertices
 
-def minimum_weight_matching(graph,vertices):
+
+def minimum_weight_matching2(graph,vertices):
 
     ret = []
     while len(vertices) != 0:
@@ -86,6 +87,20 @@ def minimum_weight_matching(graph,vertices):
         ret.append([v,closest])
 
     return ret
+
+
+
+def minimum_weight_matching(graph,vertices):
+    G = nx.Graph()
+    G.add_nodes_from(vertices)
+    for source in vertices:
+        for dest in vertices:
+            G.add_edge(source, dest, weight=graph[source,dest])
+    
+    ret = nx.min_weight_matching(G)
+
+    return np.array(list(ret),dtype=int)
+    
 
 def unite_matching_acpm(matching_M,acpm_T,graph):
     """
@@ -172,9 +187,10 @@ def apply_christophides(arbre):
     # https://en.wikipedia.org/wiki/Christofides_algorithm
 
     acpm_graph = ACPM(arbre,s=0)
-
+    
 
     odd_vertices = compute_impair_vertices(acpm_graph)
+    
 
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
 
@@ -184,7 +200,6 @@ def apply_christophides(arbre):
 
     tour = remove_repeated_vertices_euleur(tour)
 
-    # we can return anything, tour or the cost ect
     return tour
 
 
@@ -207,5 +222,5 @@ arbre = np.array([  [0,2,1,3,2],
 """
 
 arbre = arbre + arbre.T # symmetric
-
 #print('Solution: ',apply_christophides(arbre))
+apply_christophides(arbre)
