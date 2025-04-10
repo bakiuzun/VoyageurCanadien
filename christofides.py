@@ -91,6 +91,14 @@ def minimum_weight_matching2(graph,vertices):
 
 
 def minimum_weight_matching(graph,vertices):
+    """
+    bossom algorithm to find the minimum weight matching 
+    param:
+        graph 2D array where i,j is the weight for the edge (i,j)
+        vertices: index of the vertex of odd degree
+
+    return 2D array e.g [[0,3], [2,4]] means 0 and 3 are linked, 2 and 4 are linked and it's the minimum weight 
+    """
     G = nx.Graph()
     G.add_nodes_from(vertices)
     for source in vertices:
@@ -184,6 +192,13 @@ def remove_repeated_vertices_euleur(tour):
 
 
 def apply_christophides(arbre):
+    """
+    application of the christophides algorithme 
+    param:
+        arbre: 2D numpy array where the index (i,j) represent the weight of the edge (i,j) source i -  dest j 
+
+    return the christophides output,e.g [0,1,4,3,2,0] means we should start at 0 go to 1,4,3,2 then finish at 0 
+    """
     # https://en.wikipedia.org/wiki/Christofides_algorithm
 
     acpm_graph = ACPM(arbre,s=0)
