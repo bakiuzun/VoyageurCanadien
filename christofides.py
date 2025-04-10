@@ -65,31 +65,6 @@ def compute_impair_vertices(acpm_tree):
 
     return odd_vertices
 
-
-def minimum_weight_matching2(graph,vertices):
-
-    ret = []
-    while len(vertices) != 0:
-        v = vertices[0]
-        vertices = vertices[1:]
-        length = float("inf")
-
-        closest = 0
-
-        for u in vertices:
-            if v != u and graph[v,u] < length:
-                length = graph[v,u]
-                closest = u
-
-        to_delete = np.argwhere(vertices == closest).flatten()
-        vertices = np.delete(vertices,to_delete)
-
-        ret.append([v,closest])
-
-    return ret
-
-
-
 def minimum_weight_matching(graph,vertices):
     """
     bossom algorithm to find the minimum weight matching 
@@ -237,5 +212,4 @@ arbre = np.array([  [0,2,1,3,2],
 """
 
 arbre = arbre + arbre.T # symmetric
-#print('Solution: ',apply_christophides(arbre))
-apply_christophides(arbre)
+print('Solution: ',apply_christophides(arbre))
