@@ -1,5 +1,5 @@
 import numpy as np
-
+import networkx as nx
 
 def ACPM(graph,s=0):
     """
@@ -66,26 +66,24 @@ def compute_impair_vertices(acpm_tree):
     return odd_vertices
 
 def minimum_weight_matching(graph,vertices):
+    """
+    bossom algorithm to find the minimum weight matching 
+    param:
+        graph 2D array where i,j is the weight for the edge (i,j)
+        vertices: index of the vertex of odd degree
 
-    ret = []
-    while len(vertices) != 0:
-        v = vertices[0]
-        vertices = vertices[1:]
-        length = float("inf")
+    return 2D array e.g [[0,3], [2,4]] means 0 and 3 are linked, 2 and 4 are linked and it's the minimum weight 
+    """
+    G = nx.Graph()
+    G.add_nodes_from(vertices)
+    for source in vertices:
+        for dest in vertices:
+            G.add_edge(source, dest, weight=graph[source,dest])
+    
+    ret = nx.min_weight_matching(G)
 
-        closest = 0
-
-        for u in vertices:
-            if v != u and graph[v,u] < length:
-                length = graph[v,u]
-                closest = u
-
-        to_delete = np.argwhere(vertices == closest).flatten()
-        vertices = np.delete(vertices,to_delete)
-
-        ret.append([v,closest])
-
-    return ret
+    return np.array(list(ret),dtype=int)
+    
 
 def unite_matching_acpm(matching_M,acpm_T,graph):
     """
@@ -169,12 +167,20 @@ def remove_repeated_vertices_euleur(tour):
 
 
 def apply_christophides(arbre):
+    """
+    application of the christophides algorithme 
+    param:
+        arbre: 2D numpy array where the index (i,j) represent the weight of the edge (i,j) source i -  dest j 
+
+    return the christophides output,e.g [0,1,4,3,2,0] means we should start at 0 go to 1,4,3,2 then finish at 0 
+    """
     # https://en.wikipedia.org/wiki/Christofides_algorithm
 
     acpm_graph = ACPM(arbre,s=0)
-
+    
 
     odd_vertices = compute_impair_vertices(acpm_graph)
+    
 
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
 
@@ -184,7 +190,6 @@ def apply_christophides(arbre):
 
     tour = remove_repeated_vertices_euleur(tour)
 
-    # we can return anything, tour or the cost ect
     return tour
 
 
@@ -207,5 +212,4 @@ arbre = np.array([  [0,2,1,3,2],
 """
 
 arbre = arbre + arbre.T # symmetric
-
-#print('Solution: ',apply_christophides(arbre))
+print('Solution: ',apply_christophides(arbre))
