@@ -122,6 +122,7 @@ def euler_tour(list_adj,start_vertex=0):
     return:
         euler tour with potentially a cycle
     """
+
     tour = []
     stack = [start_vertex]
 
@@ -134,6 +135,7 @@ def euler_tour(list_adj,start_vertex=0):
             stack.append(v)
         else:
             tour.append(stack.pop())
+
 
     return tour[::-1]
 
@@ -211,5 +213,6 @@ arbre = np.array([  [0,2,1,3,2],
                  ])
 """
 
-arbre = arbre + arbre.T # symmetric
-print('Solution: ',apply_christophides(arbre))
+#arbre = arbre + arbre.T # symmetric
+#print('Solution: ',apply_christophides(arbre))
+
