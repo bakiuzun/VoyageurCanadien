@@ -2,57 +2,131 @@ import numpy as np
 from christofides import apply_christophides
 from utils import transform_to_matrix, get_path_in_letters
 
-def find_next_vertex_in_order(current_vertex, tour, blockages):
+def find_shortest_path(graph, start, end, visited_vertices):
     """
-    Find the next vertex in the tour order when encountering a blockage
-    """
-    n = len(tour)
-    current_idx = tour.index(current_vertex)
-    
-    # Try going to the next vertex
-    next_idx = (current_idx + 1) % n
-    next_vertex = tour[next_idx]
-    
-    # If the edge is blocked, try going to the next vertex (undirected graph)
-    while [current_vertex, next_vertex] in blockages or [next_vertex, current_vertex] in blockages:
-        next_idx = (next_idx + 1) % n
-        next_vertex = tour[next_idx]
-        
-        # If a full cycle is completed without finding a path
-        if next_idx == current_idx:
-            return None
-            
-    return next_vertex
-
-def create_multigraph(graph, visited_vertices, blockages):
-    """
-    Create the multigraph G' from unvisited vertices and the starting vertex
-    Only use direct edges between vertices
+    Find shortest path from start to end using only edges with at least one visited vertex and not blocked
     """
     n = len(graph)
-    unvisited = set(range(n)) - set(visited_vertices)
-    Us = list(unvisited) + [visited_vertices[0]]  # U ∪ {s}
+    dist = [999999] * n
+    dist[start] = 0
+    visited = [False] * n
     
-    # Create adjacency matrix for G'
-    G_prime = np.full((len(Us), len(Us)), float('inf'))
-    np.fill_diagonal(G_prime, 0)
-    
-    # Add direct edges
-    for i in range(len(Us)):
-        for j in range(len(Us)):
-            if i != j:
-                # Only add edge if not blocked
-                if [Us[i], Us[j]] not in blockages:
-                    G_prime[i][j] = graph[Us[i]][Us[j]]
-    
-    return G_prime, Us
+    while True:
+        # Find unvisited vertex with minimum distance
+        u = -1
+        min_dist = 999999
+        for i in range(n):
+            if not visited[i] and dist[i] < min_dist:
+                min_dist = dist[i]
+                u = i
+                
+        if u == -1 or u == end:
+            break
+            
+        visited[u] = True
+        
+        # Update distances to neighbors
+        for v in range(n):
+            if not visited[v] and graph[u][v] != 999999:
+                # Only use edges where at least one vertex is visited
+                if u in visited_vertices or v in visited_vertices:
+                    if dist[u] + graph[u][v] < dist[v]:
+                        dist[v] = dist[u] + graph[u][v]
+                        
+    return dist[end]
 
-def nearest_neighbor(graph, start=0):
+
+def shortcut(graph, tsp_tour, blockages):
+    """
+    Simulates the journey following a TSP tour and makes shortcuts when blocked edges are encountered.
+    
+    Args:
+        graph: Weight matrix of the graph
+        tsp_tour: Order of vertices in the TSP tour
+        blockages: List of blocked edges
+        
+    Returns:
+        tuple: (G_star, U, P1) - the visited graph, unvisited vertices, and the shortcut path
+    """
+    num_nodes = len(graph)
+    G_star = np.copy(graph)
+    U = {tsp_tour[0]}
+    P1 = [tsp_tour[0]]
+    Eb = set()
+
+    i = 0
+    j = 1
+
+    while j < len(tsp_tour):
+        vi = tsp_tour[i]
+        vj = tsp_tour[j]
+
+        for x in range(num_nodes):
+            if x != vi:
+                is_blocked = [vi, x] in blockages or [x, vi] in blockages
+                if is_blocked:
+                    Eb.add(tuple(sorted((vi, x))))
+        is_blocked = [vi, vj] in blockages or [vj, vi] in blockages
+        if not is_blocked:
+            P1.append(vj)
+            i = j
+        else:   
+            U.add(vj)
+        j += 1
+    # Check edge back to the starting vertex
+    is_blocked = [tsp_tour[i], tsp_tour[0]] in blockages or [tsp_tour[0], tsp_tour[i]] in blockages
+    if is_blocked:
+        # Return using the reverse path
+        return_path = P1[::-1][1:]  # Skip the repeated start vertex
+        P1.extend(return_path)
+
+    # Update the known graph with blocked edges
+    for u, v in Eb:
+        G_star[u][v] = 999999
+        G_star[v][u] = 999999
+    
+    # print(G_star)
+    # print(U)
+    # print(P1)
+
+    return G_star, U, P1
+
+def compress(G_star, U, G):
+    """
+    Create multigraph G' from G* and U
+    For each pair of vertices in U, find shortest path using only known edges
+    """
+    Us = list(U)  
+    n = len(G_star)
+    G_prime = [[999999] * n for _ in range(n)]
+    
+    # Add known edges among Us from G_star
+    for u in Us:
+        G_prime[u][u] = 0
+        for v in Us:
+            if u != v and G_star[u][v] != 999999:
+                G_prime[u][v] = G_star[u][v]
+    # Add compressed edges (via known parts of the graph)
+    visited_vertices = set(range(n)) - set(Us)  # V \ Us
+    for i in range(len(Us)):
+        u = Us[i]
+        for j in range(i + 1, len(Us)):
+            v = Us[j]
+            if G_prime[u][v] == 999999:  # only if not already connected directly
+                cost = find_shortest_path(G, u, v, visited_vertices)
+                if cost != 999999:
+                    G_prime[u][v] = cost
+                    G_prime[v][u] = cost  # since undirected
+
+    print(G_prime)
+    return G_prime
+
+def nearest_neighbor(graph):
     n = len(graph)
     visited = [False] * n
-    path = [start]
-    visited[start] = True
-    current = start
+    path = [0]
+    visited[0] = True
+    current = 0
     
     while len(path) < n:
         next_vertex = -1
@@ -84,50 +158,23 @@ def apply_cnn_to_routes(routes, blockages=None):
         blockages = []
         
     matrix = transform_to_matrix(routes)
-    initial_tour = apply_christophides(matrix)
-    tour = get_path_in_letters(initial_tour, routes)
+    print(matrix)
     
-    # Handle blockages
-    first_path = []
-    current_vertex = tour[0]
-    first_path.append(current_vertex)
-    visited_vertices = [list(routes.keys()).index(current_vertex)]
+    # Get initial TSP tour using Christofides
+    christophides_path = apply_christophides(matrix)
+    # path_in_letters = get_path_in_letters(christophides_path, routes)
     
-    while len(first_path) < len(tour):
-        next_vertex = find_next_vertex_in_order(current_vertex, tour, blockages)
-        
-        if next_vertex is None:
-            # If no next path is found, go back to the starting vertex
-            # by going in reverse
-            for vertex in reversed(tour[1:]):
-                if [current_vertex, vertex] not in blockages:
-                    first_path.append(vertex)
-                    current_vertex = vertex
-                    visited_vertices.append(list(routes.keys()).index(vertex))
-                    break
-            break
-            
-        first_path.append(next_vertex)
-        current_vertex = next_vertex
-        visited_vertices.append(list(routes.keys()).index(next_vertex))
-        
-        # If we have returned to the starting vertex
-        if current_vertex == tour[0]:
-            break
+    # Create shortcut path
+    G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
+    
+    # Create compressed graph G'
+    G_prime = compress(G_star, U, matrix)
 
-    # Create the multigraph G'
-    G_prime, Us = create_multigraph(matrix, visited_vertices, blockages)
-    nn_path = nearest_neighbor(G_prime)
+    # P2 = nearest_neighbor(G_prime)
     
-    # Convert path from G' back to the original graph
-    route_keys = list(routes.keys())
-    second_path = []
-    for idx in nn_path:
-        second_path.append(route_keys[Us[idx]])
-        
-    final_path = first_path + [v for v in second_path if v not in first_path]
+    # final_path = P1 + [v for v in P2 if v not in P1]
     
-    return final_path
+    # return final_path
 
 if __name__ == "__main__":
     routes = {
@@ -139,7 +186,7 @@ if __name__ == "__main__":
     }
 
     blockages = [
-        ['D', 'E']
+        ["D", "E"],
     ]
 
     final_path = apply_cnn_to_routes(routes, blockages)
