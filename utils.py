@@ -9,6 +9,17 @@ def transform_to_matrix(tuple_graph):
     return np.array(matrix)
 
 
+
+def get_blockages_in_int(blockages,base_tuple):
+    res = []
+    keys = list(base_tuple.keys())
+    k = {}
+    for i in range(len(keys)):k[keys[i]] = i
+    for i in range(len(blockages)):
+        sr,dest = blockages[i]
+        res.append([k[sr],k[dest]])
+
+    return res
 def get_path_in_letters(solution,base_tuple):
     """
     we use this method because when we apply christofides it gives us a solution for e.g
