@@ -1,6 +1,5 @@
 from christofides import apply_christophides
-from utils import transform_to_matrix,get_path_in_letters,construct_example_path
-
+from utils import transform_to_matrix,get_path_in_letters,construct_example_path,create_symmetric_blockage,calculate_cost
 routes = {
     'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
     'B': {'A': 1, 'B':0, 'C':1, 'D': 2, 'E': 1},
@@ -235,26 +234,38 @@ def apply_routage_cyclique(routes,blockages):
     initial_path = path_to_take
     first_direction = initial_path.copy()
     last_vertice = path_to_take[0]
-    blockages = [ ['V3','V4'],['V3','V5'],
-                      ['V7','V8'],
-                      ['V9','V10'],
-                      ['V12','V13'],
-                      ['V12','V14'],
-                      ['V16','V4'],
-                      ['V4','V5'],
-                      ['V8','V10'],
-                      ['V13','V14'],
-                      ['V13','V10'],
-                      ['V13','V12'],
-                      ['V10','V5'],
-                      ['V10','V9'],
-                      ['V10','V8'],
-                      ['V5','V4'],
-                      ['V5','V14'],
-                      ['V5','V3'],
-                      ['V14','V1']
-    ]
+    blockages = [ ['V3','V4'],
+                  ['V3','V5'],
+                  ['V3','V6'],
+                  ['V7','V8'],
+                  ['V9','V10'],
+                  ['V12','V13'],
+                  ['V12','V14'],
+                  ["V15",'V16'],
 
+                  ["V5","V4"],
+                  ["V5","V3"],
+                  ["V5","V2"],
+                  ["V5",'V1'],
+                  ["V5","V16"],
+                  
+
+                  ["V14","V13"],
+                  ["V14","V12"],
+                  ["V14","V11"],
+                  ["V14","V10"],  
+                  ["V14","V16"],
+                  ["V14","V1"],
+                  ["V14","V2"],
+                  ["V14","V3"],
+                  ["V14","V4"],
+
+
+
+                  
+    ]
+    blockages = create_symmetric_blockage(blockages)
+    
     # first iteration
     taken_path = apply_first_iteration(path_to_take,blockages)
     visited_vertices = taken_path
@@ -272,11 +283,13 @@ def apply_routage_cyclique(routes,blockages):
             non_visited_vertices is [V5,V10,V14] we want it as [V10,V5,V14] because we should
             not inverse the V14 it is the last goal
             """
+            #reverse_order(complete_path[-1],non_visited_vertices,initial_path)
             initial_path = list(reversed(initial_path))
             last_one = non_visited_vertices[-1]
+            
             non_visited_vertices = list(reversed(non_visited_vertices[:-1])) + [last_one]
-
-
+            print("NON VISITED = ",non_visited_vertices)
+            print("INITIAL PATH = ",initial_path)
         taken_path,visited_vertices =  apply_iteration_m(path_to_take=non_visited_vertices,
                                                          source=complete_path[-1],
                                                          visited_vertices=visited_vertices,
@@ -302,11 +315,12 @@ def apply_routage_cyclique(routes,blockages):
 
 
 
-    print(complete_path)
+    return complete_path
 # racordement du dernier sommet au sommet de départ
 
-apply_routage_cyclique(routes,blockages)
-
+complete_path = apply_routage_cyclique(routes,blockages)
+print(f"Final: {complete_path}")
+#print(f"Cost: {calculate_cost(complete_path,base_tuple=routes) }")
 """
 path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
     initial_path = path_to_take

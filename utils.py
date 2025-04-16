@@ -9,7 +9,13 @@ def transform_to_matrix(tuple_graph):
     return np.array(matrix)
 
 
+def create_symmetric_blockage(blockages):
+    ret = blockages.copy()
+    for block in blockages:
+        s,d = block
+        ret.append([d,s])
 
+    return ret
 def get_blockages_in_int(blockages,base_tuple):
     res = []
     keys = list(base_tuple.keys())
@@ -19,8 +25,8 @@ def get_blockages_in_int(blockages,base_tuple):
         sr,dest = blockages[i]
         res.append([k[sr],k[dest]])
         res.append([k[dest],k[sr]])
-
     return res
+
 def get_path_in_letters(solution,base_tuple):
     """
     we use this method because when we apply christofides it gives us a solution for e.g
@@ -42,8 +48,8 @@ def get_path_in_letters(solution,base_tuple):
 
     for i in range(len(solution)):
         res.append(keys[solution[i]])
-
     return res
+
 
 
 def calculate_cost(solution,base_tuple):
