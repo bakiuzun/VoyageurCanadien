@@ -138,6 +138,17 @@ def compress(G_star, U, G):
 
     return G_prime,total_predecessors
 
+
+def link_to_source(G_star,last_visited,source):
+    _, predecessor = dijkstra(csgraph=csr_array(G_star), 
+                                        directed=False, 
+                                        indices=last_visited, 
+                                        return_predecessors=True)
+            
+    
+    p = retrieve_path_from_pred(last_visited,source,predecessor)
+
+    return p 
 def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
     
     G_prime = np.array(G_prime)
@@ -158,16 +169,27 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
         # we have to compare with the direct distance from current to the min_index 
         direct_dist = G_star[current][U[min_index]]
 
-        if min_value >= direct_dist and [current,U[min_index]] not in blockages:
-            # we don't use the shortest path 
-            path.append(U[min_index])
-        else:
-            # use the path founded path djistra and now we have to add the predecessors 
+        # we learned more
+        if [current,U[min_index]] in blockages:
+            G_star[current][U[min_index]] = MAX_INT
+            G_star[U[min_index]][current] = MAX_INT
+            # si il y a un blockages alors forcement on va utiliser le chemin donner par le compress
             path.extend(retrieve_path_from_pred(current,min_dist,predecessor[current]))
+        else:
+            # il y a pas de blockage et le chemin directe et mieux que celui trouvé dans compress
+            if min_value >= direct_dist:
+                # we don't use the shortest path 
+                path.append(U[min_index])
+            else:
+                # il y a pas de blockages mais ce chemin et mieux que le chemin actuel
+                path.extend(retrieve_path_from_pred(current,min_dist,predecessor[current]))
 
         visited[min_index] = True
         current = min_index
 
+
+    path.extend(link_to_source(G_star,last_visited=current,source=0))
+    # we now know every blocked trajectory 
     return path
 
 def apply_cnn_to_routes(routes, blockages=None):
