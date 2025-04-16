@@ -18,6 +18,7 @@ def get_blockages_in_int(blockages,base_tuple):
     for i in range(len(blockages)):
         sr,dest = blockages[i]
         res.append([k[sr],k[dest]])
+        res.append([k[dest],k[sr]])
 
     return res
 def get_path_in_letters(solution,base_tuple):

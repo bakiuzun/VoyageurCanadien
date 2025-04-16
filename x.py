@@ -11,6 +11,7 @@ MAX_INT = sys.maxsize
 def mapp_predecessor(n,tmp_visited,predecessor):
 
     mapped_predecessor = np.full(n, -1, dtype=int)  # -1 pour les non-visités
+    
     for k, pred in enumerate(predecessor):
         if pred != -9999:  # -9999 est la valeur par défaut de scipy pour aucun prédécesseur
             mapped_predecessor[tmp_visited[k]] = tmp_visited[pred]   
@@ -20,10 +21,12 @@ def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
     p = []
 
     i = dest_ind
+    print("PRED DE I =",predecessor[i])
     while i != source_ind:
-        p.append(i)
+        p.append(predecessor[i])
         i = predecessor[i]
 
+    print("P = ",p)
     return p[::-1]
 
 
@@ -158,37 +161,43 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
     visited[0] = True
     current = 0
     U = list(U) # {0, 2, 3} we skip the first one it is visited
-    
+    print("PREDECESSOR TOTAL = ",predecessor)
     while sum(visited) != n:
         min_dist = float('inf')
 
         for i in range(n):
             if G_prime[current][i] < min_dist and visited[i] == False:
                 min_index = i
-                min_value = G_prime[current][i]
+                min_dist = G_prime[current][i]
         # we have to compare with the direct distance from current to the min_index 
-        direct_dist = G_star[current][U[min_index]]
 
-        # we learned more
-        if [current,U[min_index]] in blockages:
+        direct_dist = G_star[U[current]][U[min_index]]
+        if [U[current],U[min_index]] in blockages:
             G_star[current][U[min_index]] = MAX_INT
             G_star[U[min_index]][current] = MAX_INT
             # si il y a un blockages alors forcement on va utiliser le chemin donner par le compress
-            path.extend(retrieve_path_from_pred(current,min_dist,predecessor[current]))
+            # car celui ci passe par des chemin déjà visité ces garantie
+
+            print("PREDECESSORS = ",predecessor[current])
+            print("CURR IDX = ",current)
+            print("MIN IND = ",min_index)
+            print("U CURRENT = ",U[current])
+            print("U MIN = ",U[min_index])
+            path.extend(retrieve_path_from_pred(current,min_index,predecessor[current]))
         else:
             # il y a pas de blockage et le chemin directe et mieux que celui trouvé dans compress
-            if min_value >= direct_dist:
+            if min_dist >= direct_dist:
                 # we don't use the shortest path 
                 path.append(U[min_index])
             else:
                 # il y a pas de blockages mais ce chemin et mieux que le chemin actuel
-                path.extend(retrieve_path_from_pred(current,min_dist,predecessor[current]))
+                path.extend(retrieve_path_from_pred(current,min_index,predecessor[current]))
 
         visited[min_index] = True
         current = min_index
 
 
-    path.extend(link_to_source(G_star,last_visited=current,source=0))
+    #path.extend(link_to_source(G_star,last_visited=current,source=0))
     # we now know every blocked trajectory 
     return path
 
@@ -220,22 +229,22 @@ def apply_cnn_to_routes(routes, blockages=None):
     P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
     
-    print("P1 = ",P1)
-    print("P2 = ",P2)
+    #print("P1 = ",P1)
+    #print("P2 = ",P2)
     final_path = P1 + P2
     return final_path
 
 if __name__ == "__main__":
     routes = {
         'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
-        'B': {'A': 1, 'B':0, 'C':1, 'D': 2, 'E': 1},
+        'B': {'A': 1, 'B':0, 'C':1, 'D': 4, 'E': 1},
         'C': {'A': 2, 'B':1, 'C':0, 'D': 1, 'E': 1},
-        'D': {'A': 1, 'B':2, 'C':1, 'D': 0, 'E': 1},
+        'D': {'A': 1, 'B':4, 'C':1, 'D': 0, 'E': 1},
         'E': {'A': 1, 'B':1, 'C':1, 'D': 1, 'E': 0},
     }
 
     blockages = [
-        ["D", "E"],["E","D"],["E","C"],["C","E"],
+        ["D", "E"],["E","C"],["D","C"]
     ]
 
     final_path = apply_cnn_to_routes(routes, blockages)
