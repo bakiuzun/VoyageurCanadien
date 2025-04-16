@@ -13,8 +13,19 @@ def mapp_predecessor(n,tmp_visited,predecessor):
     mapped_predecessor = np.full(n, -1, dtype=int)  # -1 pour les non-visités
     for k, pred in enumerate(predecessor):
         if pred != -9999:  # -9999 est la valeur par défaut de scipy pour aucun prédécesseur
-            mapped_predecessor[tmp_visited[k]] = tmp_visited[pred]      
-    return mapp_predecessor
+            mapped_predecessor[tmp_visited[k]] = tmp_visited[pred]   
+    return mapped_predecessor
+
+def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
+    p = []
+
+    i = dest_ind
+    while i != source_ind:
+        p.append(i)
+        i = predecessor[i]
+
+    return p[::-1]
+
 
 def shortcut(graph, tsp_tour, blockages):
     """
@@ -84,6 +95,8 @@ def compress(G_star, U, G):
 
     visited_vertices = list(set(range(n)) - set(Us))  # V \ Us 
     total_predecessors  = []
+
+
     for i in range(len(Us)):
         u = Us[i]
 
@@ -93,6 +106,7 @@ def compress(G_star, U, G):
             tmp_visited = visited_vertices + [v] 
             tmp_visited += [u]
             if i != 0: tmp_visited += [0]
+
             tmp_visited = list(sorted(tmp_visited)) # TRES IMPORTANT pour garder les poids dand l'ordre 
 
             mini_graph = [[G_star[row][col] for col in tmp_visited] for row in tmp_visited]
@@ -109,60 +123,51 @@ def compress(G_star, U, G):
             et ces le cas seulement quand i est != 0 car le premier indices et 0 et on peut passer de 0 and v directement
             ce n'est pas un soucis
             """
-
-
             if i != 0:    
                 mini_graph[ind_v][ind_u] = MAX_INT
                 mini_graph[ind_u][ind_v] = MAX_INT
 
-            dist_matrix, predecessor = dijkstra(csgraph=csr_array(mini_graph), directed=False, indices=ind_u, return_predecessors=True)
+            dist_matrix, predecessor = dijkstra(csgraph=csr_array(mini_graph), 
+                                                directed=False, 
+                                                indices=ind_u, 
+                                                return_predecessors=True)
             
             total_predecessors.append(mapp_predecessor(n,tmp_visited,predecessor))
-            G_prime[i][j] = dist_matrix[  ind_v ]
+            G_prime[i][j] = dist_matrix[ ind_v ]
             G_prime[j][i] = dist_matrix[  ind_v ]
 
     return G_prime,total_predecessors
 
 def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
     
+    G_prime = np.array(G_prime)
     n = len(G_prime)
     visited = [False] * n
-    path = [0]
+    path = [] # we don't include the 0 we don't need 
     visited[0] = True
     current = 0
-    U = list(U)[1:] # {0, 2, 3} we skip the first one it is visited
-
-    while len(U) != 0:
-        next_vertex = -1
+    U = list(U) # {0, 2, 3} we skip the first one it is visited
+    
+    while sum(visited) != n:
         min_dist = float('inf')
 
-        # FROM THE SHORTEST PATH USED BEFORE 
-        min_index = np.argmin(G_prime[current])
-        min_value = np.min(G_prime[current])
-
+        for i in range(n):
+            if G_prime[current][i] < min_dist and visited[i] == False:
+                min_index = i
+                min_value = G_prime[current][i]
         # we have to compare with the direct distance from current to the min_index 
         direct_dist = G_star[current][U[min_index]]
-        #if min_value > direct_dist and blockages[]
 
-        break
+        if min_value >= direct_dist and [current,U[min_index]] not in blockages:
+            # we don't use the shortest path 
+            path.append(U[min_index])
+        else:
+            # use the path founded path djistra and now we have to add the predecessors 
+            path.extend(retrieve_path_from_pred(current,min_dist,predecessor[current]))
 
-    """
-    while len(path) < n:
-        next_vertex = -1
-        min_dist = float('inf')
-        
-        for i in range(n):
-            if not visited[i]:
-                  graph[current][i] < min_dist:
-                min_dist = graph[current][i]
-                next_vertex = i
-                
-        if next_vertex == -1:break
-            
-        path.append(next_vertex)
-        visited[next_vertex] = True
-        current = next_vertex
-    """
+        visited[min_index] = True
+        current = min_index
+
     return path
 
 def apply_cnn_to_routes(routes, blockages=None):
@@ -192,8 +197,10 @@ def apply_cnn_to_routes(routes, blockages=None):
 
     P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
-    # final_path = P1 + [v for v in P2 if v not in P1]
-    
+    print(P2)
+    print(P1)
+    final_path = P1 + P2
+    print(final_path)
     # return final_path
 
 if __name__ == "__main__":
