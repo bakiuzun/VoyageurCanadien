@@ -8,6 +8,14 @@ import sys
 MAX_INT = sys.maxsize
 
 
+def mapp_predecessor(n,tmp_visited,predecessor):
+
+    mapped_predecessor = np.full(n, -1, dtype=int)  # -1 pour les non-visités
+    for k, pred in enumerate(predecessor):
+        if pred != -9999:  # -9999 est la valeur par défaut de scipy pour aucun prédécesseur
+            mapped_predecessor[tmp_visited[k]] = tmp_visited[pred]      
+    return mapp_predecessor
+
 def shortcut(graph, tsp_tour, blockages):
     """
     Simulates the journey following a TSP tour and makes shortcuts when blocked edges are encountered.
@@ -72,69 +80,80 @@ def compress(G_star, U, G):
     """
     Us = list(U)  
     n = len(G_star)
-    G_prime = [[999999] * n for _ in range(n)]
+    G_prime = [[MAX_INT] * len(Us) for _ in range(len(Us))]
 
-
-    visited_vertices = list(set(range(n)) - set(Us[1:]))  # V \ Us we don't take in account the 0 
-    print(visited_vertices)
-
-    visited_vertices.append(3)
-
-    print(list(sorted(visited_vertices)))
-    [0,1,2,3,4,5,6]
-    {0,2,3,5}
-    
-    [0,1,4,6]
-
-    [0,1,2,4,5,6]
-    [0,1,2,3,4,5]
-
-    [0,1,3,4,5,6]
-    [0,1,2,3,4,5]
+    visited_vertices = list(set(range(n)) - set(Us))  # V \ Us 
+    total_predecessors  = []
     for i in range(len(Us)):
         u = Us[i]
 
-        
         for j in range(i + 1, len(Us)):
             v = Us[j]
 
             tmp_visited = visited_vertices + [v] 
-            if i != 0: tmp_visited += [u]
+            tmp_visited += [u]
+            if i != 0: tmp_visited += [0]
             tmp_visited = list(sorted(tmp_visited)) # TRES IMPORTANT pour garder les poids dand l'ordre 
 
-            mini_graph = [G_star[ligne] for ligne in tmp_visited]
+            mini_graph = [[G_star[row][col] for col in tmp_visited] for row in tmp_visited]
+          
+            ind_v = tmp_visited.index(v)
+            ind_u = tmp_visited.index(u)
 
-            # v et a quelle index ? 2 ok alor mini graph 2 
-            # les deux indices ne sont pas visité donc leurs poids va être mis a MAX car 
-            # on veut pas qu'il prend ce chemin pour le Djistra on veut que des chemins qui ont été visité 
-            if i != 0:
-                mini_graph[i,j] = MAX_INT
-                mini_graph[j,i] = MAX_INT
+            """
+            on veut faire le plus court chemin en utilisant seulement les sommets visité 
+            quand on va donner le graph a djistra si on ne met pas la valeur de la distance 
+            entre u et v a MAX alors il se peut qu'il utilise ce chemin OR u et v ne sont pas visité 
+            donc pour être SUR qu'il ne passe pas de u à v directement on va mettre la distance a MAX et donc il va 
+            aller chercher un chemin dont tout les sommets sont visité 
+            et ces le cas seulement quand i est != 0 car le premier indices et 0 et on peut passer de 0 and v directement
+            ce n'est pas un soucis
+            """
 
-            dist_matrix, predecessors = dijkstra(csgraph=csr_array(G_star), directed=False, indices=u, return_predecessors=True)
 
+            if i != 0:    
+                mini_graph[ind_v][ind_u] = MAX_INT
+                mini_graph[ind_u][ind_v] = MAX_INT
+
+            dist_matrix, predecessor = dijkstra(csgraph=csr_array(mini_graph), directed=False, indices=ind_u, return_predecessors=True)
             
-            
-            G_star[u,v] = dist_matrix[v] # 0. 1. 2. 1. 1.]
-            G_star[v,u] = dist_matrix[v]
-    
-        
-    
-    return G_prime
+            total_predecessors.append(mapp_predecessor(n,tmp_visited,predecessor))
+            G_prime[i][j] = dist_matrix[  ind_v ]
+            G_prime[j][i] = dist_matrix[  ind_v ]
 
-def nearest_neighbor(graph):
-    n = len(graph)
+    return G_prime,total_predecessors
+
+def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
+    
+    n = len(G_prime)
     visited = [False] * n
     path = [0]
     visited[0] = True
     current = 0
-    
+    U = list(U)[1:] # {0, 2, 3} we skip the first one it is visited
+
+    while len(U) != 0:
+        next_vertex = -1
+        min_dist = float('inf')
+
+        # FROM THE SHORTEST PATH USED BEFORE 
+        min_index = np.argmin(G_prime[current])
+        min_value = np.min(G_prime[current])
+
+        # we have to compare with the direct distance from current to the min_index 
+        direct_dist = G_star[current][U[min_index]]
+        #if min_value > direct_dist and blockages[]
+
+        break
+
+    """
     while len(path) < n:
         next_vertex = -1
         min_dist = float('inf')
         
         for i in range(n):
-            if not visited[i] and graph[current][i] < min_dist:
+            if not visited[i]:
+                  graph[current][i] < min_dist:
                 min_dist = graph[current][i]
                 next_vertex = i
                 
@@ -143,7 +162,7 @@ def nearest_neighbor(graph):
         path.append(next_vertex)
         visited[next_vertex] = True
         current = next_vertex
-        
+    """
     return path
 
 def apply_cnn_to_routes(routes, blockages=None):
@@ -164,14 +183,14 @@ def apply_cnn_to_routes(routes, blockages=None):
     path_in_letters = get_path_in_letters(christophides_path, routes)
     blockages = get_blockages_in_int(blockages,routes)
     
-
+    print("PATH: ",path_in_letters)
     # Create shortcut path
     G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
     
     # Create compressed graph G'
-    G_prime = compress(G_star, U, matrix)
+    G_prime,pred = compress(G_star, U, matrix)
 
-    # P2 = nearest_neighbor(G_prime)
+    P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
     # final_path = P1 + [v for v in P2 if v not in P1]
     
@@ -187,7 +206,7 @@ if __name__ == "__main__":
     }
 
     blockages = [
-        ["D", "E"],["E","D"]
+        ["D", "E"],["E","D"],["E","C"],["C","E"],
     ]
 
     final_path = apply_cnn_to_routes(routes, blockages)
