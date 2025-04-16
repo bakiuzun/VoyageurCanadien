@@ -1,6 +1,6 @@
 import numpy as np
 from christofides import apply_christophides
-from utils import transform_to_matrix, get_path_in_letters,get_blockages_in_int
+from utils import transform_to_matrix, get_path_in_letters,get_blockages_in_int,calculate_cost
 from scipy.sparse import csr_array
 from scipy.sparse.csgraph import dijkstra
 import sys 
@@ -23,7 +23,7 @@ def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
     p = []
 
     while i != source_ind:
-        p.append(i)
+        p.append(int(i)) # i is a np.int64 
         i = predecessor[i]
     return p[::-1]
 
@@ -99,10 +99,6 @@ def shortcut(graph, tsp_tour, blockages):
         G_star[u][v] = MAX_INT
         G_star[v][u] = MAX_INT
     
-    # print(G_star)
-    # print(U)
-    # print(P1)
-    
     return G_star, U, P1
 
 def compress(G_star, U, G):
@@ -153,25 +149,16 @@ def compress(G_star, U, G):
                                                 return_predecessors=True)
             
             mapped_original_index = mapp_predecessor(n,tmp_visited,predecessor)
+            
             total_predecessors[u,v] = mapped_original_index
             total_predecessors[v,u] = get_reverse_predecessor(n,tmp_visited,mapped_original_index,u,v)
-            #total_predecessors.append(mapp_predecessor(n,tmp_visited,predecessor))
+            
             G_prime[i][j] = dist_matrix[ ind_v ]
             G_prime[j][i] = dist_matrix[  ind_v ]
 
     return G_prime,total_predecessors
 
 
-def link_to_source(G_star,last_visited,source):
-    _, predecessor = dijkstra(csgraph=csr_array(G_star), 
-                                        directed=False, 
-                                        indices=last_visited, 
-                                        return_predecessors=True)
-            
-    
-    p = retrieve_path_from_pred(last_visited,source,predecessor)
-
-    return p 
 def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
     
     G_prime = np.array(G_prime)
@@ -207,7 +194,7 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
                 path.append(U[min_index])
             else:
                 # il y a pas de blockages mais ce chemin et mieux que le chemin actuel
-                path.extend(retrieve_path_from_pred(U[current],U[min_index],predecessor[current]))
+                path.extend(retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]]))
 
         visited[min_index] = True
         current = min_index
@@ -234,7 +221,6 @@ def apply_cnn_to_routes(routes, blockages=None):
     path_in_letters = get_path_in_letters(christophides_path, routes)
     blockages = get_blockages_in_int(blockages,routes)
     
-    print("CHRISTOFIDES PATH: ",path_in_letters)
     # Create shortcut path
     G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
     
@@ -243,9 +229,6 @@ def apply_cnn_to_routes(routes, blockages=None):
 
     P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
-    
-    print("P1 = ",P1)
-    print("P2 = ",P2)
     final_path = P1 + P2
     return final_path
 
@@ -259,9 +242,12 @@ if __name__ == "__main__":
     }
 
     blockages = [
-        ["D", "E"],["E","C"],["D","C"]
+        ["D", "E"],["E","C"]
     ]
-
+    
     final_path = apply_cnn_to_routes(routes, blockages)
-    print(f"Final Path: {final_path}")
+    
+    f = get_path_in_letters(solution=final_path,base_tuple=routes)
+    print(f"Final Path: {f}")
+    print(f"Cost: {calculate_cost(f,routes)}")
 

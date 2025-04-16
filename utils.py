@@ -46,7 +46,14 @@ def get_path_in_letters(solution,base_tuple):
     return res
 
 
+def calculate_cost(solution,base_tuple):
+    cost = 0 
+    for i in range(len(solution)-1):
+        s = solution[i]
+        d = solution[i+1]
+        cost += base_tuple[s][d]
 
+    return cost
 
 def construct_example_path():
     vertices = [f"V{i+1}" for i in range(0,16)]
