@@ -210,7 +210,7 @@ def apply_cnn_to_routes(routes, blockages=None):
     path_in_letters = get_path_in_letters(christophides_path, routes)
     blockages = get_blockages_in_int(blockages,routes)
     
-    print("PATH: ",path_in_letters)
+    print("CHRISTOFIDES PATH: ",path_in_letters)
     # Create shortcut path
     G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
     
@@ -219,11 +219,11 @@ def apply_cnn_to_routes(routes, blockages=None):
 
     P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
-    print(P2)
-    print(P1)
+    
+    print("P1 = ",P1)
+    print("P2 = ",P2)
     final_path = P1 + P2
-    print(final_path)
-    # return final_path
+    return final_path
 
 if __name__ == "__main__":
     routes = {
@@ -239,5 +239,5 @@ if __name__ == "__main__":
     ]
 
     final_path = apply_cnn_to_routes(routes, blockages)
-    #print(f"Path: {final_path}")
+    print(f"Final Path: {final_path}")
 
