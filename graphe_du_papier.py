@@ -99,7 +99,6 @@ def print_graph(G):
     print("GRAPH G".center(80))
     print("=" * 80)
     
-    # Phân loại các đỉnh theo level
     nodes_by_level = {"lower": [], "upper": [], "other": []}
     for node in G:
         if isinstance(node, tuple):
@@ -111,13 +110,11 @@ def print_graph(G):
         else:
             nodes_by_level["other"].append(node)
     
-    # In thông tin tổng quan
     total_nodes = sum(len(nodes) for nodes in nodes_by_level.values())
     total_edges = sum(len(neighbors) for neighbors in G.values()) // 2
     print(f"\nTotal number of nodes: {total_nodes}")
     print(f"Total number of edges: {total_edges}")
     
-    # In các đỉnh theo từng level
     for level in ["lower", "upper", "other"]:
         if nodes_by_level[level]:
             print(f"\n{'-' * 40}")
