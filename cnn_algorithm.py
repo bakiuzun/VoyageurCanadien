@@ -101,7 +101,7 @@ def shortcut(graph, tsp_tour, blockages):
     
     return G_star, U, P1
 
-def compress(G_star, U, G):
+def compress(G_star, U):
     """
     Create multigraph G' from G* and U
     For each pair of vertices in U, find shortest path using only known edges
@@ -218,14 +218,13 @@ def apply_cnn_to_routes(routes, blockages=None):
     
     # Get initial TSP tour using Christofides
     christophides_path = apply_christophides(matrix)
-    path_in_letters = get_path_in_letters(christophides_path, routes)
     blockages = get_blockages_in_int(blockages,routes)
     
     # Create shortcut path
     G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
     
     # Create compressed graph G'
-    G_prime,pred = compress(G_star, U, matrix)
+    G_prime,pred = compress(G_star, U)
 
     P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
