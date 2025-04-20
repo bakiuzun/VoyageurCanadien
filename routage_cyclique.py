@@ -1,5 +1,5 @@
 from christofides import apply_christophides
-from utils import transform_to_matrix,get_path_in_letters,construct_example_path,create_symmetric_blockage,calculate_cost
+from utils import transform_to_matrix,get_path_in_letters,create_symmetric_blockage,calculate_cost
 routes = {
     'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
     'B': {'A': 1, 'B':0, 'C':1, 'D': 2, 'E': 1},
@@ -198,8 +198,6 @@ def apply_last_iteration(goal_vertice,source,visited_vertices,blockages):
         return [goal_vertice] # we go directly
 
 
-
-
 def get_non_visited_vertice(all_vertice,visited_vertice):
     """
     method to get the non visited vertice
@@ -210,6 +208,21 @@ def get_non_visited_vertice(all_vertice,visited_vertice):
         vertex that is not in visited_vertice list
     """
     return [item for item in all_vertice if item not in visited_vertice]
+
+
+def reverse_order(last_visited,non_visited_vertices,initial_path):
+
+    last_visited_index = initial_path.index(last_visited)
+
+    left = initial_path[:last_visited_index]
+    right = initial_path[last_visited_index+1:]
+
+    left = [v for v in left if v in non_visited_vertices]
+    right = [v for v in right if v in non_visited_vertices]
+
+    
+    return list(reversed(left)) + list(reversed(right))
+
 
 
 def apply_routage_cyclique(routes,blockages):
@@ -230,103 +243,13 @@ def apply_routage_cyclique(routes,blockages):
     initial_path = path_to_take
     last_vertice = path_to_take[0] # last and first are equal
 
+
+
     path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
     initial_path = path_to_take
-    first_direction = initial_path.copy()
     last_vertice = path_to_take[0]
     blockages = [ ['V3','V4'],
-                  ['V3','V5'],
-                  ['V3','V6'],
-                  ['V7','V8'],
-                  ['V9','V10'],
-                  ['V12','V13'],
-                  ['V12','V14'],
-                  ["V15",'V16'],
-
-                  ["V5","V4"],
-                  ["V5","V3"],
-                  ["V5","V2"],
-                  ["V5",'V1'],
-                  ["V5","V16"],
-                  
-
-                  ["V14","V13"],
-                  ["V14","V12"],
-                  ["V14","V11"],
-                  ["V14","V10"],  
-                  ["V14","V16"],
-                  ["V14","V1"],
-                  ["V14","V2"],
-                  ["V14","V3"],
-                  ["V14","V4"],
-
-
-
-                  
-    ]
-    blockages = create_symmetric_blockage(blockages)
-    
-    # first iteration
-    taken_path = apply_first_iteration(path_to_take,blockages)
-    visited_vertices = taken_path
-    complete_path = taken_path.copy() # this is the results
-    non_visited_vertices = get_non_visited_vertice(initial_path,taken_path)
-
-    # m iteration
-    while len(non_visited_vertices) != 0:
-        if len(taken_path) > 0 and  taken_path[-1] == path_to_take[-1]:
-            initial_path = initial_path
-
-        else: # i == -1, means we couldn't go to the last vertice we should change the order
-            """
-            if we should have taken [V4,V5,V8,V10,V13,V14] but could only took V4 V8 V13
-            non_visited_vertices is [V5,V10,V14] we want it as [V10,V5,V14] because we should
-            not inverse the V14 it is the last goal
-            """
-            #reverse_order(complete_path[-1],non_visited_vertices,initial_path)
-            initial_path = list(reversed(initial_path))
-            last_one = non_visited_vertices[-1]
-            
-            non_visited_vertices = list(reversed(non_visited_vertices[:-1])) + [last_one]
-            print("NON VISITED = ",non_visited_vertices)
-            print("INITIAL PATH = ",initial_path)
-        taken_path,visited_vertices =  apply_iteration_m(path_to_take=non_visited_vertices,
-                                                         source=complete_path[-1],
-                                                         visited_vertices=visited_vertices,
-                                                         initial_path=initial_path,
-                                                         blockages=blockages)
-
-        complete_path += taken_path
-        path_to_take = non_visited_vertices
-        non_visited_vertices  = get_non_visited_vertice(initial_path,visited_vertices)
-
-
-
-    # last iteration
-    taken_path = apply_last_iteration(goal_vertice=last_vertice,
-                                      source=taken_path[-1],
-                                      visited_vertices=visited_vertices,
-                                       blockages=blockages)
-
-    #taken_path,visited_vertices =  apply_iteration_m([last_vertice],taken_path[-1],
-    #                                                                  visited_vertices,
-    #                                                                  first_direction,blockages)
-    complete_path += taken_path
-
-
-
-    return complete_path
-# racordement du dernier sommet au sommet de départ
-
-complete_path = apply_routage_cyclique(routes,blockages)
-print(f"Final: {complete_path}")
-#print(f"Cost: {calculate_cost(complete_path,base_tuple=routes) }")
-"""
-path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
-    initial_path = path_to_take
-    first_direction = initial_path.copy()
-    last_vertice = path_to_take[0]
-    blockages = [ ['V3','V4'],['V3','V5'],
+                 ['V3','V5'],
                   ['V7','V8'],
                   ['V9','V10'],
                   ['V12','V13'],
@@ -345,4 +268,63 @@ path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
                   ['V5','V3'],
                   ['V14','V1']
                  ]
-"""
+    blockages = create_symmetric_blockage(blockages)
+    
+    # first iteration
+    taken_path = apply_first_iteration(path_to_take,blockages)
+    visited_vertices = taken_path
+    complete_path = taken_path.copy() # this is the results
+    non_visited_vertices = get_non_visited_vertice(initial_path,taken_path)
+
+    # m iteration
+    print(f"P1: {path_to_take} ")
+    print(f"Pcr: {taken_path} ")
+    print(f"Unvisited Vertices: {non_visited_vertices}\n")
+
+    m = 2
+    while len(non_visited_vertices) != 0:
+        
+        if len(taken_path) > 0 and  taken_path[-1] == path_to_take[-1]:
+            initial_path = initial_path
+
+        else: # i == -1, means we couldn't go to the last vertice we should change the order
+            non_visited_vertices =  reverse_order(complete_path[-1],non_visited_vertices,initial_path)
+            initial_path = list(reversed(initial_path))
+            
+        print(f"P{m}: {[complete_path[-1]] + non_visited_vertices} ")
+        taken_path,visited_vertices =  apply_iteration_m(path_to_take=non_visited_vertices,
+                                                         source=complete_path[-1],
+                                                         visited_vertices=visited_vertices,
+                                                         initial_path=initial_path,
+                                                         blockages=blockages)
+        
+        print(f"Pcr: {[complete_path[-1]] + taken_path}")
+        complete_path += taken_path
+        path_to_take = non_visited_vertices
+
+        non_visited_vertices  = get_non_visited_vertice(initial_path,visited_vertices)
+        
+        
+        print(f"Unvisited Vertices: {non_visited_vertices}\n")
+        m += 1
+
+    # last iteration
+    taken_path = apply_last_iteration(goal_vertice=last_vertice,
+                                      source=complete_path[-1],
+                                      visited_vertices=visited_vertices,
+                                       blockages=blockages)
+
+    print(f"P{m}: {[complete_path[-1]] + [last_vertice]}")
+    print(f"Pcr: {[complete_path[-1]] + taken_path}\n")
+
+    complete_path += taken_path
+
+    return complete_path
+# racordement du dernier sommet au sommet de départ
+
+complete_path = apply_routage_cyclique(routes,blockages)
+print(f"Complete path: {complete_path}")
+print(f"Cost: {calculate_cost(complete_path,base_tuple=routes) }")
+
+
+

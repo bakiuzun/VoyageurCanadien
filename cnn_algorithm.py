@@ -27,7 +27,7 @@ def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
         i = predecessor[i]
     return p[::-1]
 
-def get_reverse_predecessor(n, tmp_visited, original_predecessor, u_idx, v_idx):
+def get_reverse_predecessor(n, original_predecessor, u_idx, v_idx):
     # Step 1: Get the path u → v
     path_u_to_v = []
     current = v_idx
@@ -39,12 +39,12 @@ def get_reverse_predecessor(n, tmp_visited, original_predecessor, u_idx, v_idx):
 
     path_v_to_u = path_u_to_v[::-1]  
     
-    # Step 3: Build predecessor array for v → u
     reverse_predecessor = np.full(n, -1, dtype=int)
+
     for i in range(1, len(path_v_to_u)):
         node = path_v_to_u[i]
         pred = path_v_to_u[i-1]
-        reverse_predecessor[tmp_visited[node]] = tmp_visited[pred]
+        reverse_predecessor[node] = pred
 
     return reverse_predecessor
 
@@ -88,6 +88,7 @@ def shortcut(graph, tsp_tour, blockages):
         j += 1
     # Check edge back to the starting vertex
     is_blocked = [tsp_tour[i], tsp_tour[0]] in blockages or [tsp_tour[0], tsp_tour[i]] in blockages
+
     if is_blocked:
         # Return using the reverse path
         return_path = P1[::-1][1:]  # Skip the repeated start vertex
@@ -108,7 +109,7 @@ def compress(G_star, U):
     """
     Us = list(U)  
     n = len(G_star)
-    G_prime = [[MAX_INT] * len(Us) for _ in range(len(Us))]
+    G_prime = [[0] * len(Us) for _ in range(len(Us))]
 
     visited_vertices = list(set(range(n)) - set(Us))  # V \ Us 
     total_predecessors  = {}
@@ -151,7 +152,7 @@ def compress(G_star, U):
             mapped_original_index = mapp_predecessor(n,tmp_visited,predecessor)
             
             total_predecessors[u,v] = mapped_original_index
-            total_predecessors[v,u] = get_reverse_predecessor(n,tmp_visited,mapped_original_index,u,v)
+            total_predecessors[v,u] = get_reverse_predecessor(n,mapped_original_index,u,v)
             
             G_prime[i][j] = dist_matrix[ ind_v ]
             G_prime[j][i] = dist_matrix[  ind_v ]
@@ -178,28 +179,43 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
                 min_dist = G_prime[current][i]
 
         # we have to compare with the direct distance from current to the min_index 
-
         direct_dist = G_star[U[current]][U[min_index]]
+        cost = min_dist
+        taken_path = []
+        
         if [U[current],U[min_index]] in blockages:
             G_star[U[current]][U[min_index]] = MAX_INT
             G_star[U[min_index]][U[current]] = MAX_INT
             # si il y a un blockages alors forcement on va utiliser le chemin donner par le compress
             # car celui ci passe par des chemin déjà visité ces garantie
-
-            path.extend(retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]]))
+            taken_path = retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]])
         else:
             # il y a pas de blockage et le chemin directe et mieux que celui trouvé dans compress
             if min_dist >= direct_dist:
                 # we don't use the shortest path 
-                path.append(U[min_index])
+                cost = direct_dist
+                taken_path = [U[min_index]]
             else:
                 # il y a pas de blockages mais ce chemin et mieux que le chemin actuel
-                path.extend(retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]]))
+                taken_path = retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]]) 
+                
 
+        # le plus cours chemin + le chemin direct est bloqué 
+        # on stop l'algortihme il faut au moins un chemin vers ce sommet 
+        if cost == MAX_INT:
+            raise Exception(f"Aucun chemin a été trouvé pour accéder le sommet {U[min_dist]} depuis {U[current]} ")
+        
+        path.extend(taken_path)
         visited[min_index] = True
         current = min_index
 
-    path.extend(retrieve_path_from_pred(source_ind=U[current],dest_ind=0,predecessor=predecessor[U[current],0]))
+    if G_prime[current][0] == MAX_INT: # Blockage 
+        # on retourne en arriere comme dans shortcut
+        return_path = path[::-1][1:]  
+        path.extend(return_path)
+    else:
+        path.extend(retrieve_path_from_pred(source_ind=U[current],dest_ind=0,predecessor=predecessor[U[current],0]))
+
     # we now know every blocked trajectory 
     return path
 
@@ -223,16 +239,18 @@ def apply_cnn_to_routes(routes, blockages=None):
     # Create shortcut path
     G_star, U, P1 = shortcut(matrix, christophides_path, blockages)
     
+    P2 = []
     # Create compressed graph G'
-    G_prime,pred = compress(G_star, U)
-
-    P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
+    if len(U) > 1: # some vertices hasn't been visited
+        G_prime,pred = compress(G_star, U)
+        P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
+        
     final_path = P1 + P2
     return final_path
 
-if __name__ == "__main__":
-    routes = {
+"""
+routes = {
         'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
         'B': {'A': 1, 'B':0, 'C':1, 'D': 4, 'E': 1},
         'C': {'A': 2, 'B':1, 'C':0, 'D': 1, 'E': 1},
@@ -240,13 +258,15 @@ if __name__ == "__main__":
         'E': {'A': 1, 'B':1, 'C':1, 'D': 1, 'E': 0},
     }
 
-    blockages = [
-        ["D", "E"],["E","C"]
-    ]
+blockages = [
+    ["D", "E"],["E","C"]
+]
     
-    final_path = apply_cnn_to_routes(routes, blockages)
+final_path = apply_cnn_to_routes(routes, blockages)
     
-    f = get_path_in_letters(solution=final_path,base_tuple=routes)
-    print(f"Final Path: {f}")
-    print(f"Cost: {calculate_cost(f,routes)}")
+f = get_path_in_letters(solution=final_path,base_tuple=routes)
+print(f"Final Path: {f}")
+print(f"Cost: {calculate_cost(f,routes)}")
+
+"""
 

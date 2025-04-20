@@ -1,5 +1,5 @@
 import numpy as np
-
+import random 
 
 def transform_to_matrix(tuple_graph):
     matrix = [[0 for _ in range(len(tuple_graph))] for _ in range(len(tuple_graph))]
@@ -79,3 +79,43 @@ def construct_example_path():
             
     return routes
 
+
+
+def construct_alea_graph():
+    nb_vertices = random.randint(50, 100)
+    graph = {}
+    
+    cost_matrix = np.zeros((nb_vertices, nb_vertices), dtype=int)
+    
+    for i in range(nb_vertices):
+        for j in range(i + 1, nb_vertices):
+            cost_matrix[i][j] = random.randint(1, 100)
+            cost_matrix[j][i] = cost_matrix[i][j] 
+    
+    for k in range(nb_vertices):
+        for i in range(nb_vertices):
+            for j in range(nb_vertices):
+                if cost_matrix[i][j] > cost_matrix[i][k] + cost_matrix[k][j]:
+                    cost_matrix[i][j] = cost_matrix[i][k] + cost_matrix[k][j]
+    
+    for i in range(nb_vertices):
+        v = f"V{i}"
+        e = {}
+        for j in range(nb_vertices):
+            e[f"V{j}"] = int(cost_matrix[i][j])
+        graph[v] = e
+        
+    blockages = []
+    nb_blockages = 10*nb_vertices
+    for i in range(nb_blockages):
+        source = random.randint(0,nb_vertices-1)
+
+        dest = random.randint(0,nb_vertices-1)
+        if dest == source:
+        
+            while dest == source or [f"V{source}",f"V{dest}"] in blockages:
+                dest = random.randint(0,nb_vertices-1)
+        
+        blockages.append([f"V{source}",f"V{dest}"])
+
+    return graph,blockages
