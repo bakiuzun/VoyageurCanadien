@@ -1,15 +1,14 @@
 from routage_cyclique import apply_routage_cyclique
 from cnn_algorithm import apply_cnn_to_routes
 from utils import construct_alea_graph,get_path_in_letters,calculate_cost
-import numpy as np 
+
 def main():
-
-
 
     CR = []
     CNN = []
     routess = []
     blockagess = []
+    print("Comparison Launched...")
     for _ in range(200):
         routes,blockages = construct_alea_graph()
         
@@ -29,12 +28,6 @@ def main():
         CNN.append(cost_CNN)
 
 
-    print("MEAN CR = ",np.mean(CR))
-    print("MEAN CNN = ",np.mean(CNN))
     print("How many times CNN was better than CR: ",len(routess))
-
-
-    
-
 
 main()
