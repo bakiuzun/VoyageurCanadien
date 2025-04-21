@@ -9,7 +9,16 @@ MAX_INT = sys.maxsize
 
 
 def mapp_predecessor(n,tmp_visited,predecessor):
-
+    """
+    when using Dijkstra we give it only a mini-matrice which means the vertice at the first
+    index might not be the first vertice of the whole matrice the one that contains every vertice
+    so when a list of predecessor [2,1,4] probably the 2 represent another index in the whole matrice and 
+    we just want to map it 
+    param:
+        n: number of vertices in total 
+        tmp_visited: the visited vertice + 2 of the unvisited vertice 
+        predecessor: a list that contain the predecessors to go from U to any other vertice 
+    """
     mapped_predecessor = np.full(n, -1, dtype=int)  # -1 pour les non-visités
     
     for k, pred in enumerate(predecessor):
@@ -18,7 +27,15 @@ def mapp_predecessor(n,tmp_visited,predecessor):
     return mapped_predecessor
 
 def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
-    
+    """
+    this method give us the path from source to dest using the predecessors 
+    for example we might have source = A, dest = E, predecessor B,C,D 
+    this would give us A-B-C-D-E
+    param:
+        source_ind: the index at which we start
+        dest_ind: the index at which we end 
+        predecessor: a list that contains the predecessors to go from source to any other vertice
+    """
     i = dest_ind
     p = []
 
@@ -28,6 +45,15 @@ def retrieve_path_from_pred(source_ind,dest_ind,predecessor):
     return p[::-1]
 
 def get_reverse_predecessor(n, original_predecessor, u_idx, v_idx):
+    """
+    this function is used in Dijkstra when we found a path from U to V we also want to know 
+    the path from V to U, 
+    param:
+        n: the numbers of vertices in total
+        original_predecessor: the predecessors to go from u to v 
+        u_idx: the index at which we have u
+        v_idx: the index at which we have v
+    """
     # Step 1: Get the path u → v
     path_u_to_v = []
     current = v_idx
@@ -100,12 +126,16 @@ def shortcut(graph, tsp_tour, blockages):
         G_star[u][v] = MAX_INT
         G_star[v][u] = MAX_INT
     
+    print(f"Shortcut Eb: {Eb}")
     return G_star, U, P1
 
 def compress(G_star, U):
     """
     Create multigraph G' from G* and U
     For each pair of vertices in U, find shortest path using only known edges
+    param:
+        G_star: modified matrice after the shortcut 
+        U: the list of unvisited vertices
     """
     Us = list(U)  
     n = len(G_star)
@@ -161,7 +191,16 @@ def compress(G_star, U):
 
 
 def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
-    
+    """
+    NN algorithm 
+    param:
+        G_star: modified matrice after the shortcut 
+        G_prime: a list that contains the cost for each of the unvisited vertices 
+        blockages: list that represent the blockages 
+        predecessor: a list that contains the predecessor for a given path 
+        for example maybe to go to the vertice C from A we just take the vertice B and D (found in Djisktra) 
+        U: the list of unvisited vertices
+    """
     G_prime = np.array(G_prime)
     n = len(G_prime)
     visited = [False] * n
@@ -196,6 +235,7 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
                 cost = direct_dist
                 taken_path = [U[min_index]]
             else:
+                # ceci ne dois pas être possible car INEGALITE TRIANGULAIRE
                 # il y a pas de blockages mais ce chemin et mieux que le chemin actuel
                 taken_path = retrieve_path_from_pred(U[current],U[min_index],predecessor[U[current],U[min_index]]) 
                 
@@ -216,7 +256,6 @@ def nearest_neighbor(G_star,G_prime,blockages,predecessor,U):
     else:
         path.extend(retrieve_path_from_pred(source_ind=U[current],dest_ind=0,predecessor=predecessor[U[current],0]))
 
-    # we now know every blocked trajectory 
     return path
 
 def apply_cnn_to_routes(routes, blockages=None):
@@ -245,7 +284,9 @@ def apply_cnn_to_routes(routes, blockages=None):
         G_prime,pred = compress(G_star, U)
         P2 = nearest_neighbor(G_star,G_prime,blockages,pred,U)
     
-        
+    
+    print(f'P1: {P1}')
+    print(f'P2: {P2}')
     final_path = P1 + P2
     return final_path
 
