@@ -2,6 +2,7 @@ import numpy as np
 import random 
 
 def transform_to_matrix(tuple_graph):
+    """Transform a tuple to matrix form"""
     matrix = [[0 for _ in range(len(tuple_graph))] for _ in range(len(tuple_graph))]
     for i, node in enumerate(tuple_graph):
         for j, neighbor in enumerate(tuple_graph):
@@ -10,6 +11,7 @@ def transform_to_matrix(tuple_graph):
 
 
 def create_symmetric_blockage(blockages):
+    """takes a blockages list and make it symmetric """
     ret = blockages.copy()
     for block in blockages:
         s,d = block
@@ -53,6 +55,7 @@ def get_path_in_letters(solution,base_tuple):
 
 
 def calculate_cost(solution,base_tuple):
+    """calculate the cost of taking a path """
     cost = 0 
     for i in range(len(solution)-1):
         s = solution[i]
@@ -81,8 +84,12 @@ def construct_example_path():
 
 
 
-def construct_alea_graph():
-    nb_vertices = random.randint(50, 100)
+def construct_alea_graph(nb_vertices=None,nb_blockages=None):
+
+    if nb_vertices is None:
+        nb_vertices = random.randint(50, 100)
+    if nb_blockages is None:
+        nb_blockages = 10*nb_vertices
     graph = {}
     
     cost_matrix = np.zeros((nb_vertices, nb_vertices), dtype=int)

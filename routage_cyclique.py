@@ -211,7 +211,17 @@ def get_non_visited_vertice(all_vertice,visited_vertice):
 
 
 def reverse_order(last_visited,non_visited_vertices,initial_path):
-
+    """
+    this function is used to reverse the order of the vertices
+    we first locate where the last visited vertice is in the initial path
+    then we take the left and right part of the path and reverse them
+    param:
+        last_visited: the last vertice we have visited
+        non_visited_vertices: the vertices that are not visited
+        initial_path: the initial path that we should follow
+    return:
+        the reversed order of the vertices
+    """
     last_visited_index = initial_path.index(last_visited)
 
     left = initial_path[:last_visited_index]
@@ -243,31 +253,6 @@ def apply_routage_cyclique(routes,blockages):
     initial_path = path_to_take
     last_vertice = path_to_take[0] # last and first are equal
 
-
-
-    path_to_take = [f'V{i+1}' for i in range(0,16) ] # V1 - V16
-    initial_path = path_to_take
-    last_vertice = path_to_take[0]
-    blockages = [ ['V3','V4'],
-                 ['V3','V5'],
-                  ['V7','V8'],
-                  ['V9','V10'],
-                  ['V12','V13'],
-                  ['V12','V14'],
-                  ['V16','V4'],
-                  ['V4','V5'],
-                  ['V8','V10'],
-                  ['V13','V14'],
-                  ['V13','V10'],
-                  ['V13','V12'],
-                  ['V10','V5'],
-                  ['V10','V9'],
-                  ['V10','V8'],
-                  ['V5','V4'],
-                  ['V5','V14'],
-                  ['V5','V3'],
-                  ['V14','V1']
-                 ]
     blockages = create_symmetric_blockage(blockages)
     
     # first iteration
@@ -320,8 +305,21 @@ def apply_routage_cyclique(routes,blockages):
     complete_path += taken_path
 
     return complete_path
-# racordement du dernier sommet au sommet de départ
 
+
+routes = {
+    'A': {'A':0, 'B': 1, 'C':2,'D': 1,'E':1},
+    'B': {'A': 1, 'B':0, 'C':1, 'D': 2, 'E': 1},
+    'C': {'A': 2, 'B':1, 'C':0, 'D': 1, 'E': 1},
+    'D': {'A': 1, 'B':2, 'C':1, 'D': 0, 'E': 1},
+    'E': {'A': 1, 'B':1, 'C':1, 'D': 1, 'E': 0},
+}
+
+blockages = [
+    ['D', 'E']
+]
+
+# Example usage
 complete_path = apply_routage_cyclique(routes,blockages)
 print(f"Complete path: {complete_path}")
 print(f"Cost: {calculate_cost(complete_path,base_tuple=routes) }")

@@ -27,7 +27,9 @@ def main():
         CR.append(cost_CR)
         CNN.append(cost_CNN)
 
-
     print("How many times CNN was better than CR: ",len(routess))
+
+    #print("Average cost of CR: ",sum(CR)/len(CR))
+    #print("Average cost of CNN: ",sum(CNN)/len(CNN))
 
 main()

@@ -180,10 +180,8 @@ def apply_christophides(arbre):
 
     acpm_graph = ACPM(arbre,s=0)
     
-
     odd_vertices = compute_impair_vertices(acpm_graph)
     
-
     minimum_matching_vertices = minimum_weight_matching(arbre,odd_vertices)
 
     acpm_union_min_vertices = unite_matching_acpm(minimum_matching_vertices,acpm_graph,arbre)
@@ -213,6 +211,6 @@ arbre = np.array([  [0,2,1,3,2],
                  ])
 """
 
-#arbre = arbre + arbre.T # symmetric
+arbre = arbre + arbre.T # symmetric
 #print('Solution: ',apply_christophides(arbre))
 
